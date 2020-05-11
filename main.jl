@@ -244,9 +244,12 @@ selected_countries = [
 
 pyplot()
 
+LMR = "Latin Modern Roman"
+LMRC = LMR * " Caps"
+
 default(
-	titlefont  = font(13, "Latin Modern Roman Caps", halign = :left),
-	legendfont = font( 5, "Latin Modern Roman"),
+	titlefont  = font(13, LMRC, halign = :left),
+	legendfont = font( 5, LMR),
 	ytickfont  = font( 7, "CMU Serif"),
 	xtickfont  = font( 7, "Input Mono"))
 
@@ -258,9 +261,7 @@ GREEN = RGB(map(normal, [ 28, 180,  90])...)
 
 plots = []
 
-# TODO  Center each graph so the peak is in the middle.
-
-grouping_every = 4
+grouping_every = 3
 interp = 3
 indecies = ceil(length(dates) / grouping_every)
 data_points = UInt(indecies * interp)
@@ -281,6 +282,29 @@ for country in selected_countries
 	ys = [ys((indecies - 1)*(x - 1) / (data_points - 1) + 1) for x in xs]
 	ys = [y < 0 ? 0 : y for y in ys]
 
+
+	cases_start = 1
+	# When number of cases > 9
+	#=
+	acc = 0
+	for y in ys
+		if acc > 9
+			break
+		end
+		if !cumulative
+			acc += y
+		else
+			acc = y
+		end
+		cases_start += 1
+	end
+	println(cases_start)
+	=#
+
+	xs = xs[cases_start:end]
+	ys = ys[cases_start:end]
+
+
 	if country == "Korea, South"
 		country = "South Korea"  # Why did they name it this way..?
 	elseif country == "US"
@@ -292,7 +316,7 @@ for country in selected_countries
 	y_latest = ys[end]
 	y_ratio = y_latest / y_max
 
-	print("$(country): [$(y_min); $(round(y_max))]")
+	print("$(country): [$(round(y_min)); $(round(y_max))]")
 	println(" -- ratio: $(round(y_ratio, digits=5))")
 
 
@@ -311,7 +335,7 @@ for country in selected_countries
 	end
 
 	p = plot(xs, ys,
-		title = country,
+		title = " " * country,
 		titlelocation = :left,
 		lab = titlecase(counting_type),
 		legend = false,
@@ -320,7 +344,6 @@ for country in selected_countries
 		xrotation = 60,
 		yformatter = nice_number,
 		xformatter = i -> nice_date(dates[date_inverse(i)]),
-		size = (1500, 1500),
 		dpi = 230)
 	
 	push!(plots, p)
@@ -335,18 +358,52 @@ title_name = "COVID-19 — $(titlecase(counting_type)) ($(data_rep))"
 
 grid_shape = UInt(ceil(sqrt(length(selected_countries))))
 l = @layout [
-	a{0.1h}; grid(grid_shape, grid_shape)
+	a{0.1h}; grid(grid_shape, grid_shape); b{0.1h}
 ]
+
 
 title_plot = plot(
 	annotation = (
 		0.5, 0.5,
-		text(title_name, font("Latin Modern Roman Caps", 30))),
+		text(title_name, font(LMRC, 30))),
 	framestyle = :none)
 
-p = plot(title_plot, plots...,
+key_font = font(LMRC, 20)
+marker(color) = text("█████", font("sans-serif", 24, color=color))
+
+key_plot = plot(
+	annotation = [
+		(
+			0.25, 0.75,
+			marker(RED)
+		)
+		(
+			0.5, 0.75,
+			marker(AMBER)
+		)
+		(
+			0.75, 0.75,
+			marker(GREEN)
+		)
+		(
+			0.25, 0.25,
+			text("Needs Action", key_font)
+		)
+		(
+			0.5, 0.25,
+			text("Nearly There", key_font)
+		)
+		(
+			0.75, 0.25,
+			text("Successful", key_font)
+		)
+	],
+	framestyle = :none)
+
+p = plot(title_plot, plots..., key_plot,
 	plot_title = title_name,
 	margin = 30px,
+	size = (1500, 2000),
 	layout = l)
 
 
@@ -355,7 +412,10 @@ println("Showing $(cumulative ? "" : "non-")cumulative data.")
 
 println("\nSaving image.\n")
 savefig(p, "plots.png")
-cp("plots.png", "COVID-19_$(counting_type)_$(lowercase(data_rep))_plots.png")
+cp(
+	"plots.png",
+	"COVID-19_$(counting_type)_$(lowercase(data_rep))_plots.png",
+	force=true)
 println("\nSaved!\n")
 
 
