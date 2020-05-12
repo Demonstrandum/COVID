@@ -1,2 +1,7 @@
 # The plots
 *.png
+!graphs/*.png
+
+# Object files
+*.o
+*.so

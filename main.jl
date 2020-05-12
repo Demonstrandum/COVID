@@ -89,6 +89,8 @@ if isinteractive()
 else
 	for arg in ARGS
 		global counting_type
+		global cumulative
+
 		lower = lowercase(arg)
 		
 		if lower in counting_types
@@ -99,7 +101,9 @@ else
 	end
 end
 
-filename = "time_series_covid19_$(counting_type)_global.csv"
+NO_COLOUR = cumulative || counting_type == "recovered"
+
+filename = "$(@__DIR__)/time_series_covid19_$(counting_type)_global.csv"
 date_range = Nothing
 
 println("\nReading Data.\n")
@@ -231,7 +235,7 @@ selected_countries = [
 	"Greece",
 	"Korea, South",
 	"Japan",
-	"Slovakia",
+	"Russia",
 	"Australia",
 	"Israel",
 	"France",
@@ -261,18 +265,19 @@ GREEN = RGB(map(normal, [ 28, 180,  90])...)
 
 plots = []
 
-grouping_every = 4
-interp = 3
-indecies = ceil(length(dates) / grouping_every)
-data_points = UInt(indecies * interp)
-
-date_inverse(x) = Int(ceil(
-	x * grouping_every / interp) + 1)
-
 println("\nBuilding plots.\n")
 
 for country in selected_countries
-	dates_formatted = map(nice_date, dates)
+	low_data = maximum(countries[country]) < 35
+	grouping_every = low_data ? 1 : 4
+	interp = low_data ? 1 : 3
+
+	indecies = ceil(length(dates) / grouping_every)
+	data_points = UInt(indecies * interp)
+
+	date_inverse(x) = Int(ceil(
+		x * grouping_every / interp) + 1)
+		dates_formatted = map(nice_date, dates)
 
 	xs = 1:data_points
 	ys = running_mean(
@@ -322,7 +327,7 @@ for country in selected_countries
 
 	color = Nothing
 
-	if y_ratio < 0.11
+	if y_ratio < 0.101
 		color = GREEN
 	elseif y_ratio < 0.343
 		color = AMBER
@@ -330,7 +335,7 @@ for country in selected_countries
 		color = RED
 	end
 
-	if cumulative
+	if NO_COLOUR
 		color = :blue
 	end
 
@@ -343,8 +348,7 @@ for country in selected_countries
 		seriestype = :path,
 		xrotation = 60,
 		yformatter = nice_number,
-		xformatter = i -> nice_date(dates[date_inverse(i)]),
-		dpi = 230)
+		xformatter = i -> nice_date(dates[date_inverse(i)]))
 	
 	push!(plots, p)
 end
@@ -357,10 +361,24 @@ end
 title_name = "COVID-19 — $(titlecase(counting_type)) ($(data_rep))"
 
 grid_shape = UInt(ceil(sqrt(length(selected_countries))))
+# Blank, Title, Grid, Key, Blank.
 l = @layout [
-	a{0.1h}; grid(grid_shape, grid_shape); b{0.1h}
+	a{0.02w} [
+		a{0.1h}
+		grid(grid_shape, grid_shape)
+		b{0.1h}
+	] b{0.02w}
 ]
 
+if NO_COLOUR
+	global l = @layout [
+		a{0.02w} [
+			a{0.1h}
+			grid(grid_shape, grid_shape)
+			b{0.01h}
+		] b{0.02w}
+	]
+end
 
 title_plot = plot(
 	annotation = (
@@ -371,51 +389,62 @@ title_plot = plot(
 key_font = font(LMRC, 20)
 marker(color) = text("█████", font("sans-serif", 24, color=color))
 
-key_plot = plot(
-	annotation = [
+key_plot = if !NO_COLOUR
+	plot(annotation = [
 		(
-			0.25, 0.75,
+			0.25, 0.7,
 			marker(RED)
 		)
 		(
-			0.5, 0.75,
+			0.5, 0.7,
 			marker(AMBER)
 		)
 		(
-			0.75, 0.75,
+			0.75, 0.7,
 			marker(GREEN)
 		)
 		(
-			0.25, 0.25,
+			0.25, 0.3,
 			text("Needs Action", key_font)
 		)
 		(
-			0.5, 0.25,
+			0.5, 0.3,
 			text("Nearly There", key_font)
 		)
 		(
-			0.75, 0.25,
+			0.75, 0.3,
 			text("Successful", key_font)
 		)
 	],
 	framestyle = :none)
+else
+	plot(framestyle = :none)
+end
 
-p = plot(title_plot, plots..., key_plot,
+blank_plot = plot(framestyle = :none)
+
+p = plot(blank_plot, title_plot,
+	plots...,
+	key_plot, blank_plot,
 	plot_title = title_name,
 	margin = 10px,
-	size = (2000, 2500),
+	size = (1200, 1500),
+	dpi = 230,
 	layout = l)
 
 
 println("\nCounting $(counting_type).")
 println("Showing $(cumulative ? "" : "non-")cumulative data.")
 
-println("\nSaving image.\n")
-savefig(p, "plots.png")
-cp(
-	"plots.png",
-	"COVID-19_$(counting_type)_$(lowercase(data_rep))_plots.png",
-	force=true)
+plots_png = "COVID-19_$(counting_type)_$(lowercase(data_rep))_plots.png"
+println("\nSaving image as `$(plots_png)'.\n")
+savefig(p, plots_png)
+if isinteractive()
+	cp(
+		plots_png,
+		"plots.png",
+		force=true)
+end
 println("\nSaved!\n")
 
 

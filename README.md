@@ -21,4 +21,14 @@ julia> include("main.jl")
 You can run this multiple times to generate different kinds
 of graphs.
 
+Running `./graphs/graph_gen.sh` will generate all graphs.
+
+## Plots
+
+![plot](./graphs/COVID-19_confirmed_daily-cases_plots.png)
+![plot](./graphs/COVID-19_confirmed_cumulative_plots.png)
+![plot](./graphs/COVID-19_deaths_daily-cases_plots.png)
+![plot](./graphs/COVID-19_deaths_cumulative_plots.png)
+![plot](./graphs/COVID-19_recovered_daily-cases_plots.png)
+![plot](./graphs/COVID-19_recovered_cumulative_plots.png)
 
