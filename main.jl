@@ -261,7 +261,7 @@ GREEN = RGB(map(normal, [ 28, 180,  90])...)
 
 plots = []
 
-grouping_every = 3
+grouping_every = 4
 interp = 3
 indecies = ceil(length(dates) / grouping_every)
 data_points = UInt(indecies * interp)
@@ -402,8 +402,8 @@ key_plot = plot(
 
 p = plot(title_plot, plots..., key_plot,
 	plot_title = title_name,
-	margin = 30px,
-	size = (1500, 2000),
+	margin = 10px,
+	size = (2000, 2500),
 	layout = l)
 
 
