@@ -33,7 +33,7 @@ function iterate_rows(lambda::Function, filename::String)
 	data_file = open(filename, "r")
 	header = (data_file
 		|> eachline
-		|> first 
+		|> first
 		|> s -> split(s, ",")
 		|> xs -> map(string, xs))
 
@@ -41,7 +41,7 @@ function iterate_rows(lambda::Function, filename::String)
 		data_file,
 		header=header,
 		normalizenames=true)
-	
+
 	for row in rows
 		lambda(row)
 	end
@@ -92,7 +92,7 @@ else
 		global cumulative
 
 		lower = lowercase(arg)
-		
+
 		if lower in counting_types
 			counting_type = lower
 		elseif lower == "cumulative"
@@ -153,7 +153,7 @@ function split_every(xs::AbstractArray{Number, 1}, grouping::UInt)
 
 	for x in xs
 		push!(group, x)
-		
+
 		if i % grouping == 0
 			push!(groups, group)
 			group = []
@@ -205,7 +205,7 @@ function nice_number(num::Number)
 		pushfirst!(places, s[i-2:i])
 		i -= 3
 	end
-	
+
 	if i > 0
 		pushfirst!(places, s[1:i])
 	end
@@ -229,7 +229,7 @@ selected_countries = [
 	"Thailand",
 	"Finland",
 	"Denmark",
-	"Mexico",
+	"New Zealand",
 	"Canada",
 	"Germany",
 	"Greece",
@@ -243,7 +243,7 @@ selected_countries = [
 	"India",
 	"Pakistan",
 	"Netherlands",
-	"Switzerland"
+	"Brazil"
 ]
 
 pyplot()
@@ -349,7 +349,7 @@ for country in selected_countries
 		xrotation = 60,
 		yformatter = nice_number,
 		xformatter = i -> nice_date(dates[date_inverse(i)]))
-	
+
 	push!(plots, p)
 end
 
